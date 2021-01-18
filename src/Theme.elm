@@ -1,6 +1,6 @@
 module Theme exposing (Theme, Error, decoder)
 
-import Dict exposing (Dict)
+import Dict
 import SolidColor exposing (SolidColor)
 import Xml.Decode as XD exposing (list, map, map2, path, stringAttr)
 
