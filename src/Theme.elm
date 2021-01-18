@@ -2,7 +2,7 @@ module Theme exposing (Theme, Error, decoder)
 
 import Dict exposing (Dict)
 import SolidColor exposing (SolidColor)
-import Xml.Decode as XD exposing (andMap, list, map2, path, stringAttr, succeed)
+import Xml.Decode as XD exposing (list, map, map2, path, stringAttr)
 
 {- EXAMPLE THEME
 
@@ -42,7 +42,7 @@ type alias Theme =
 {-| Errors that can occur during decoding a Hundred Rabbits theme.
 -}
 type Error
-    = MalformedXML
+    = MalformedXML XD.Error
     | IDNotFound String
     | InvalidColor String
 
@@ -53,8 +53,8 @@ The decoder may not succeed, so it returns a maybe.
 -}
 decoder : XD.Decoder (Result Error Theme)
 decoder =
-    succeed themeConstructor
-        |> andMap (path ["svg"] (list shapeDecoder))
+    map themeConstructor
+        (path ["svg"] (list shapeDecoder))
 
 
 {-| Internal function that decodes a single shape.
