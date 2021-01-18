@@ -1,7 +1,7 @@
 {
     "type": "package",
-    "name": "dzuk-mutant/elm-hundred-rabbits-themes",
-    "summary": "Parse and use Hundred Rabbits themes.",
+    "name": "dzuk-mutant/hundred-rabbits-themes-elm",
+    "summary": "Decode and use Hundred Rabbits themes.",
     "license": "BSD-3-Clause",
     "version": "1.0.0",
     "exposed-modules": [

@@ -1,24 +1,8 @@
-module Theme exposing (Theme, decoder)
+module Theme exposing (Theme, Error, decoder)
 
 import Dict exposing (Dict)
 import SolidColor exposing (SolidColor)
 import Xml.Decode as XD exposing (andMap, list, map2, path, stringAttr, succeed)
-
-
-{-| A color theme that adheres to the Hundred Rabbits theme spec.
--}
-type alias Theme =
-    { background : SolidColor
-    , fHigh : SolidColor
-    , fMed : SolidColor
-    , fLow : SolidColor
-    , fInv : SolidColor
-    , bHigh : SolidColor
-    , bMed : SolidColor
-    , bLow : SolidColor
-    , bInv : SolidColor
-    }
-
 
 {- EXAMPLE THEME
 
@@ -37,6 +21,54 @@ type alias Theme =
 </svg>
 
 -}
+
+
+
+{-| A color theme that adheres to the Hundred Rabbits theme spec.
+-}
+type alias Theme =
+    { background : SolidColor
+    , fHigh : SolidColor
+    , fMed : SolidColor
+    , fLow : SolidColor
+    , fInv : SolidColor
+    , bHigh : SolidColor
+    , bMed : SolidColor
+    , bLow : SolidColor
+    , bInv : SolidColor
+    }
+
+
+{-| Errors that can occur during decoding a Hundred Rabbits theme.
+-}
+type Error
+    = MalformedXML
+    | IDNotFound String
+    | InvalidColor String
+
+{-| Decodes a Hundred Rabbits theme SVG into a
+usable Theme type in Elm.
+
+The decoder may not succeed, so it returns a maybe.
+-}
+decoder : XD.Decoder (Result Error Theme)
+decoder =
+    succeed themeConstructor
+        |> andMap (path ["svg"] (list shapeDecoder))
+
+
+{-| Internal function that decodes a single shape.
+-}
+shapeDecoder : XD.Decoder (String, String)
+shapeDecoder = 
+    map2 Tuple.pair
+        (stringAttr "id")
+        (stringAttr "fill")
+
+
+
+
+
 
 
 {-| Takes an item preliminary XML decode dict
@@ -64,78 +96,60 @@ withDefaultColor color =
 withDefaultColorDict : String -> Maybe SolidColor -> SolidColor
 withDefaultColorDict _ color = withDefaultColor color
 
-
-
-{-| Checks if an id is in a given preliminary dictionary from the XML decode.
+{-| Internal function that represents the part of the decoder that takes the raw
+data from the XML, validates it and packs it into a working theme.
 -}
-idIsIn : Dict String SolidColor -> String -> Bool -> Bool
-idIsIn dict id prevResult =
-    let
-        result = List.any (\a -> Tuple.first a == id) (Dict.toList dict)
-    in
-        result && prevResult
-
-
-
-themeConstructor : List (String, String) -> Maybe Theme
+themeConstructor : List (String, String) -> Result Error Theme
 themeConstructor list =
-    let
-        -- get what worked first
-        dict = 
-            Dict.fromList list
+    let 
+        -- the list of all the IDs we need
+        diffComparison = Dict.fromList
+            [ ("background", "")
+            , ("f_high", "")
+            , ("f_med", "")
+            , ("f_low", "")
+            , ("f_inv", "")
+            , ("b_high", "")
+            , ("b_med", "")
+            , ("b_low", "")
+            , ("b_high", "")
+            , ("b_inv", "")
+            ]
+
+        hasError d =
+            d
+            |> Dict.toList
+            |> List.head
+
+        dictConv = Dict.fromList list
+        
+        idCheck = Dict.diff dictConv diffComparison
+
+        colorConv = list
+            |> Dict.fromList
             |> Dict.map convertColor
             |> Dict.filter (\_ v -> v /= Nothing)
             |> Dict.map withDefaultColorDict
 
-        -- the list of all the IDs we need
-        idList =
-            [ "background"
-            , "f_high"
-            , "f_med"
-            , "f_low"
-            , "f_inv"
-            , "b_high"
-            , "b_med"
-            , "b_low"
-            , "b_high"
-            , "b_inv"
-            ]
+        colorCheck = Dict.diff colorConv diffComparison
 
-        -- check if the XML tags we got have all the IDs we need
-        hasItems =
-            List.foldl (idIsIn dict) False idList
 
     in
-        case hasItems of
-            False -> Nothing
-            True -> Just { background = withDefaultColor <| Dict.get "background" dict
-                    , fHigh = withDefaultColor <| Dict.get "f_high" dict
-                    , fMed = withDefaultColor <| Dict.get "f_med" dict
-                    , fLow = withDefaultColor <| Dict.get "f_low" dict
-                    , fInv = withDefaultColor <| Dict.get "f_inv" dict
-                    , bHigh = withDefaultColor <| Dict.get "b_high" dict
-                    , bMed = withDefaultColor <| Dict.get "b_med" dict
-                    , bLow = withDefaultColor <| Dict.get "b_low" dict
-                    , bInv = withDefaultColor <| Dict.get "b_inv" dict
-                    }
+        case hasError idCheck of
+            Just e -> Err ( IDNotFound ( Tuple.first e ))
+            Nothing ->
+
+                case hasError colorCheck of
+                    Just e -> Err ( InvalidColor ( Tuple.first e ))
+                    Nothing -> Ok { background = withDefaultColor <| Dict.get "background" colorConv
+                                , fHigh = withDefaultColor <| Dict.get "f_high" colorConv
+                                , fMed = withDefaultColor <| Dict.get "f_med" colorConv
+                                , fLow = withDefaultColor <| Dict.get "f_low" colorConv
+                                , fInv = withDefaultColor <| Dict.get "f_inv" colorConv
+                                , bHigh = withDefaultColor <| Dict.get "b_high" colorConv
+                                , bMed = withDefaultColor <| Dict.get "b_med" colorConv
+                                , bLow = withDefaultColor <| Dict.get "b_low" colorConv
+                                , bInv = withDefaultColor <| Dict.get "b_inv" colorConv
+                                }
 
 
-
-{-| Decodes a Hundred Rabbits theme SVG into a
-usable Theme type in Elm.
-
-The decoder may not succeed, so it returns a maybe.
--}
-decoder : XD.Decoder (Maybe Theme)
-decoder =
-    succeed themeConstructor
-        |> andMap (path ["svg"] (list shapeDecoder))
-
-
-{-| Internal function that decodes a single shape.
--}
-shapeDecoder : XD.Decoder (String, String)
-shapeDecoder = 
-    map2 Tuple.pair
-        (stringAttr "id")
-        (stringAttr "fill")
