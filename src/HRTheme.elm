@@ -3,6 +3,9 @@ module HRTheme exposing (HRTheme, decoder)
 {-| Decode theme files and use themes that conform to the
 [Hundred Rabbits theme framework](https://github.com/hundredrabbits/Themes).
 
+Because it would be impractical for `HRTheme`,
+there is no constructor function, you just manually create the record.
+
 @docs HRTheme, decoder
 -}
 
@@ -13,14 +16,13 @@ import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
 
 
 
-{-| A color theme that adheres to the Hundred Rabbits theme spec.
+{-| A color theme that uses the Hundred Rabbits theme spec.
 
 Because there's no central Color type in elm, you may have
 to convert these colours to another type when you get them
 to be usable.
 
-The Color types used in this type are from `avh4/elm-color`,
-which is a very simple and transparent package.
+The Color types used in this record are from `avh4/elm-color`.
 -}
 type alias HRTheme =
     { background : Color
@@ -50,6 +52,12 @@ type alias HRTheme =
 
 {-| Decodes a Hundred Rabbits theme SVG file/string into a
 usable type in Elm.
+
+Alongside the String-based errors the XML decoder might generate,
+this decoder will generate errors specific to Hundred Rabbits themes:
+
+- Missing ID - eg. `The ID 'f_low' was not found.`
+- Invalid color hex - eg. `The color at ID 'f_high' is not a valid hex color.`
 -}
 decoder : XD.Decoder HRTheme
 decoder =
@@ -70,7 +78,7 @@ attemptThemeConv data =
             Err r ->
                 case r of
                     IDNotFound id ->
-                        fail <| "The color ID '" ++ id ++ "' was not found."
+                        fail <| "The ID '" ++ id ++ "' was not found."
                         
                     InvalidColor id ->
                         fail <| "The color at ID '" ++ id ++ "' is not a valid hex color."
