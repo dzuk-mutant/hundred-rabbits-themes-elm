@@ -6,8 +6,9 @@ module HRTheme exposing (HRTheme, decoder)
 @docs HRTheme, decoder
 -}
 
+import Color exposing (Color)
+import Color.Convert exposing (hexToColor)
 import Dict
-import SolidColor exposing (SolidColor)
 import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
 
 
@@ -16,18 +17,21 @@ import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
 
 Because there's no central Color type in elm, you may have
 to convert these colours to another type when you get them
-to be usable. These colors use the `tesk9/palette` package.
+to be usable.
+
+The Color types used in this type are from `avh4/elm-color`,
+which is a very simple and transparent package.
 -}
 type alias HRTheme =
-    { background : SolidColor
-    , fHigh : SolidColor
-    , fMed : SolidColor
-    , fLow : SolidColor
-    , fInv : SolidColor
-    , bHigh : SolidColor
-    , bMed : SolidColor
-    , bLow : SolidColor
-    , bInv : SolidColor
+    { background : Color
+    , fHigh : Color
+    , fMed : Color
+    , fLow : Color
+    , fInv : Color
+    , bHigh : Color
+    , bMed : Color
+    , bLow : Color
+    , bInv : Color
     }
 
 
@@ -166,25 +170,24 @@ makeTheme list =
 {-| Takes an item preliminary XML decode dict
 and tries to return a SolidColor type from the color portion.
 -}
-convertColor : String -> String -> Maybe SolidColor
+convertColor : String -> String -> Maybe Color
 convertColor _ color =
     color
-    |> SolidColor.fromHex
+    |> hexToColor
     |> Result.toMaybe
 
 
 {-| At this step, we can assume that all the colors in the
 dictonary are not Nothing, so let's unwrap the Maybe.
 -}
-withDefaultColor : Maybe SolidColor -> SolidColor
+withDefaultColor : Maybe Color -> Color
 withDefaultColor color =
     case color of
-        Nothing -> SolidColor.fromRGB ( 0, 0, 0 )
+        Nothing -> Color.black
         Just c -> c
 
 
 {-| withDefaultColor, but with a key argument for iterating with a dict.
 -}
-withDefaultColorDict : String -> Maybe SolidColor -> SolidColor
+withDefaultColorDict : String -> Maybe Color -> Color
 withDefaultColorDict _ color = withDefaultColor color
-
