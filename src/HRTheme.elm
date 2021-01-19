@@ -1,16 +1,13 @@
-module HRTheme exposing (HRTheme, decoder)
+module HRTheme exposing (HRTheme, decoder, toXmlString)
 
 {-| Decode theme files and use themes that conform to the
 [Hundred Rabbits theme framework](https://github.com/hundredrabbits/Themes).
 
-Because it would be impractical for `HRTheme`,
-there is no constructor function, you just manually create the record.
-
-@docs HRTheme, decoder
+@docs HRTheme, decoder, toXmlString
 -}
 
 import Color exposing (Color)
-import Color.Convert exposing (hexToColor)
+import Color.Convert exposing (hexToColor, colorToHex)
 import Dict
 import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
 
@@ -23,6 +20,27 @@ to convert these colours to another type when you get them
 to be usable.
 
 The Color types used in this record are from `avh4/elm-color`.
+
+Because it would be impractical to do so,
+there is no constructor function for this type, you just manually
+create the record like so:
+
+    import Color exposing (rgb255) -- avh4/elm-color
+
+    myTheme : HRTheme
+    myTheme = { background = rgb255 224 177 203
+            , fHigh = rgb255 35 25 66
+            , fMed = rgb255 94 84 142
+            , fLow = rgb255 190 149 196
+            , fInv = rgb255 224 177 203
+            , bHigh = rgb255 255 255 255
+            , bMed = rgb255 94 84 142
+            , bLow = rgb255 190 149 196
+            , bInv = rgb255 159 134 192
+            }
+
+
+
 -}
 type alias HRTheme =
     { background : Color
@@ -37,9 +55,34 @@ type alias HRTheme =
     }
 
 
+{-| Converts a Hundred Rabbits Theme to an XML string
+so that it can be downloaded to the user as a file.
 
+    import File.Download as Download
+    import HRTheme
 
+    save : Theme -> Cmd msg
+    save theme =
+        Download.string "theme.svg" "image/svg+xml" (HRTheme.toXmlString theme)
 
+-}
+toXmlString : HRTheme -> String
+toXmlString theme =
+    """
+        <svg width="96px" height="64px" xmlns="http://www.w3.org/2000/svg" baseProfile="full" version="1.1">
+        <rect width='96' height='64'  id='background' fill='""" ++ colorToHex theme.background ++ """'></rect>
+        <!-- Foreground -->
+        <circle cx='24' cy='24' r='8' id='f_high' fill='""" ++ colorToHex theme.fHigh ++ """'></circle>
+        <circle cx='40' cy='24' r='8' id='f_med' fill='""" ++ colorToHex theme.fMed ++ """'></circle>
+        <circle cx='56' cy='24' r='8' id='f_low' fill='""" ++ colorToHex theme.fLow ++ """'></circle>
+        <circle cx='72' cy='24' r='8' id='f_inv' fill='""" ++ colorToHex theme.fInv ++ """'></circle>
+        <!-- Background -->
+        <circle cx='24' cy='40' r='8' id='b_high' fill='""" ++ colorToHex theme.bHigh ++ """'></circle>
+        <circle cx='40' cy='40' r='8' id='b_med' fill='""" ++ colorToHex theme.bMed ++ """'></circle>
+        <circle cx='56' cy='40' r='8' id='b_low' fill='""" ++ colorToHex theme.bLow ++ """'></circle>
+        <circle cx='72' cy='40' r='8' id='b_inv' fill='""" ++ colorToHex theme.bInv ++ """'></circle>
+    </svg>
+    """
 
 
 
@@ -53,11 +96,20 @@ type alias HRTheme =
 {-| Decodes a Hundred Rabbits theme SVG file/string into a
 usable type in Elm.
 
+
+    import Xml.Decode as XD -- from ymtszw/elm-xml-decode
+    import HRTheme
+
+    hundredRabbitsTheme = XD.run HRTheme.decoder xmlString
+
+
 Alongside the String-based errors the XML decoder might generate,
 this decoder will generate errors specific to Hundred Rabbits themes:
 
 - Missing ID - eg. `The ID 'f_low' was not found.`
 - Invalid color hex - eg. `The color at ID 'f_high' is not a valid hex color.`
+
+
 -}
 decoder : XD.Decoder HRTheme
 decoder =
