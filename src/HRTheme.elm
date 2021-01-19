@@ -13,6 +13,10 @@ import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
 
 
 {-| A color theme that adheres to the Hundred Rabbits theme spec.
+
+Because there's no central Color type in elm, you may have
+to convert these colours to another type when you get them
+to be usable. These colors use the `tesk9/palette` package.
 -}
 type alias HRTheme =
     { background : SolidColor
