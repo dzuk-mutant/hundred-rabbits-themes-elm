@@ -2,7 +2,12 @@
 
 Decode theme files and use themes that conform to the [Hundred Rabbits theme framework](https://github.com/hundredrabbits/Themes) in your application.
 
+![A basic test app showing a Hundred Rabbits Theme palette below an upload input.](example.png)
+
 [Full example of theme loading.](https://ellie-app.com/c7Szykmmdc6a1)
+
+---
+
 
 ### Make your own themes:
 
@@ -24,6 +29,8 @@ myTheme = { background = rgb255 224 177 203
 ```
 
 ### Tiny example of decoding:
+
+[Go here for a full example of theme decoding.](https://ellie-app.com/c7Szykmmdc6a1)
 
 ```
 import Xml.Decode as XD -- from ymtszw/elm-xml-decode
