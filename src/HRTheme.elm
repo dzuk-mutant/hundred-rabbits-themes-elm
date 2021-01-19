@@ -1,5 +1,11 @@
 module HRTheme exposing (HRTheme, decoder)
 
+{-| Decode theme files and use themes that conform to the
+[Hundred Rabbits theme framework](https://github.com/hundredrabbits/Themes).
+
+@docs HRTheme, decoder
+-}
+
 import Dict
 import SolidColor exposing (SolidColor)
 import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
@@ -34,8 +40,8 @@ type alias HRTheme =
 
 
 
-{-| Decodes a Hundred Rabbits theme SVG into a
-usable HRTheme type in Elm.
+{-| Decodes a Hundred Rabbits theme SVG file/string into a
+usable type in Elm.
 -}
 decoder : XD.Decoder HRTheme
 decoder =

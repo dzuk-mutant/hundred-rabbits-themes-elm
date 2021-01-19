@@ -1,4 +1,4 @@
 # Hundred Rabbits themes
 
-Decode and use themes that conform to the [Hundred Rabbits theme](https://github.com/hundredrabbits/Themes) spec.
+Decode theme files and use themes that conform to the [Hundred Rabbits theme framework](https://github.com/hundredrabbits/Themes) in your application.
 
