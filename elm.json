@@ -12,7 +12,6 @@
         "avh4/elm-color": "1.0.0 <= v < 2.0.0",
         "elm/core": "1.0.0 <= v < 2.0.0",
         "noahzgordon/elm-color-extra": "1.0.2 <= v < 2.0.0",
-        "rtfeldman/elm-hex": "1.0.0 <= v < 2.0.0",
         "ymtszw/elm-xml-decode": "3.2.1 <= v < 4.0.0"
     },
     "test-dependencies": {}
