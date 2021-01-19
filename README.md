@@ -2,6 +2,7 @@
 
 Decode theme files and use themes that conform to the [Hundred Rabbits theme framework](https://github.com/hundredrabbits/Themes) in your application.
 
+[Full example of theme loading.](https://ellie-app.com/c7Szykmmdc6a1)
 
 ### Make your own themes:
 
