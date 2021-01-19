@@ -1,4 +1,4 @@
-module HRTheme exposing (Theme, decoder)
+module HRTheme exposing (HRTheme, decoder)
 
 import Dict
 import SolidColor exposing (SolidColor)
@@ -8,7 +8,7 @@ import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
 
 {-| A color theme that adheres to the Hundred Rabbits theme spec.
 -}
-type alias Theme =
+type alias HRTheme =
     { background : SolidColor
     , fHigh : SolidColor
     , fMed : SolidColor
@@ -33,19 +33,11 @@ type alias Theme =
 
 
 
-{-| Errors that can occur during converting a
-Hundred Rabbits theme from BackendData to a Theme.
--}
-type Error
-    = IDNotFound String
-    | InvalidColor String
-
-type alias BackendData = (List (String, String))
 
 {-| Decodes a Hundred Rabbits theme SVG into a
-usable Theme type in Elm.
+usable HRTheme type in Elm.
 -}
-decoder : XD.Decoder Theme
+decoder : XD.Decoder HRTheme
 decoder =
     backendDataDecoder
         |> XD.andThen attemptThemeConv
@@ -54,7 +46,7 @@ decoder =
 {-| Attempts to convert the raw data from the XML
 decode into an actual theme.
 -}
-attemptThemeConv : BackendData -> XD.Decoder Theme
+attemptThemeConv : BackendData -> XD.Decoder HRTheme
 attemptThemeConv data =
     let
         themeConvAttempt = makeTheme data
@@ -68,6 +60,9 @@ attemptThemeConv data =
                         
                     InvalidColor id ->
                         fail <| "The color at ID '" ++ id ++ "' is not a valid hex color."
+
+
+type alias BackendData = (List (String, String))
 
 {-| Decodes the base SVG into data that can be
 verified later in the decoding process
@@ -88,10 +83,23 @@ shapeDecoder =
         (stringAttr "fill")
 
 
+
+
+
+{-| Errors that can occur during converting a
+BackendData to a HRTheme.
+-}
+type Error
+    = IDNotFound String
+    | InvalidColor String
+
+
+
+
 {-| Internal function that represents the part of the decoder that takes the raw
 data from the XML, validates it and packs it into a working theme.
 -}
-makeTheme : BackendData -> Result Error Theme
+makeTheme : BackendData -> Result Error HRTheme
 makeTheme list =
     let 
         -- the list of all the IDs we need
@@ -145,9 +153,6 @@ makeTheme list =
                                 }
 
 
-
-
-
 {-| Takes an item preliminary XML decode dict
 and tries to return a SolidColor type from the color portion.
 -}
@@ -173,88 +178,3 @@ withDefaultColor color =
 withDefaultColorDict : String -> Maybe SolidColor -> SolidColor
 withDefaultColorDict _ color = withDefaultColor color
 
-
-
-testTheme = """
-    <svg width="96px" height="64px" xmlns="http://www.w3.org/2000/svg" baseProfile="full" version="1.1">
-        <rect width='96' height='64'  id='background' fill='#E0B1CB'></rect>
-        <!-- Foreground -->
-        <circle cx='24' cy='24' r='8' id='f_high' fill='#231942'></circle>
-        <circle cx='40' cy='24' r='8' id='f_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='24' r='8' id='f_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='24' r='8' id='f_inv' fill='#E0B1CB'></circle>
-        <!-- Background -->
-        <circle cx='24' cy='40' r='8' id='b_high' fill='#FFFFFF'></circle>
-        <circle cx='40' cy='40' r='8' id='b_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='40' r='8' id='b_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='40' r='8' id='b_inv' fill='#9F86C0'></circle>
-    </svg>
-"""
-{-| Missing b_med
--}
-testMissingID = """
-    <svg width="96px" height="64px" xmlns="http://www.w3.org/2000/svg" baseProfile="full" version="1.1">
-        <rect width='96' height='64'  id='background' fill='#E0B1CB'></rect>
-        <!-- Foreground -->
-        <circle cx='24' cy='24' r='8' id='f_high' fill='#231942'></circle>
-        <circle cx='40' cy='24' r='8' id='f_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='24' r='8' id='f_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='24' r='8' id='f_inv' fill='#E0B1CB'></circle>
-        <!-- Background -->
-        <circle cx='24' cy='40' r='8' id='b_high' fill='#FFFFFF'></circle>
-        <circle cx='56' cy='40' r='8' id='b_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='40' r='8' id='b_inv' fill='#9F86C0'></circle>
-    </svg>
-"""
-
-{-| Bad f_high
--}
-testBadColor = """
-    <svg width="96px" height="64px" xmlns="http://www.w3.org/2000/svg" baseProfile="full" version="1.1">
-        <rect width='96' height='64'  id='background' fill='#E0B1CB'></rect>
-        <!-- Foreground -->
-        <circle cx='24' cy='24' r='8' id='f_high' fill='y83r'></circle>
-        <circle cx='40' cy='24' r='8' id='f_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='24' r='8' id='f_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='24' r='8' id='f_inv' fill='#E0B1CB'></circle>
-        <!-- Background -->
-        <circle cx='24' cy='40' r='8' id='b_high' fill='#FFFFFF'></circle>
-        <circle cx='40' cy='40' r='8' id='b_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='40' r='8' id='b_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='40' r='8' id='b_inv' fill='#9F86C0'></circle>
-    </svg>
-"""
-
-{-| Missing rect
--}
-testMissingRect = """
-    <svg width="96px" height="64px" xmlns="http://www.w3.org/2000/svg" baseProfile="full" version="1.1">
-        <!-- Foreground -->
-        <circle cx='24' cy='24' r='8' id='f_high' fill='y83r'></circle>
-        <circle cx='40' cy='24' r='8' id='f_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='24' r='8' id='f_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='24' r='8' id='f_inv' fill='#E0B1CB'></circle>
-        <!-- Background -->
-        <circle cx='24' cy='40' r='8' id='b_high' fill='#FFFFFF'></circle>
-        <circle cx='40' cy='40' r='8' id='b_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='40' r='8' id='b_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='40' r='8' id='b_inv' fill='#9F86C0'></circle>
-    </svg>
-"""
-
-{-| Empty SVG
--}
-testEmpty = """
-    <svg width="96px" height="64px" xmlns="http://www.w3.org/2000/svg" baseProfile="full" version="1.1">
-        <!-- Foreground -->
-        <circle cx='24' cy='24' r='8' id='f_high' fill='y83r'></circle>
-        <circle cx='40' cy='24' r='8' id='f_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='24' r='8' id='f_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='24' r='8' id='f_inv' fill='#E0B1CB'></circle>
-        <!-- Background -->
-        <circle cx='24' cy='40' r='8' id='b_high' fill='#FFFFFF'></circle>
-        <circle cx='40' cy='40' r='8' id='b_med' fill='#5E548E'></circle>
-        <circle cx='56' cy='40' r='8' id='b_low' fill='#BE95C4'></circle>
-        <circle cx='72' cy='40' r='8' id='b_inv' fill='#9F86C0'></circle>
-    </svg>
-"""
