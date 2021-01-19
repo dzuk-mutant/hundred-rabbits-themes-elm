@@ -1,26 +1,10 @@
-module Theme exposing (Theme, Error, decoder)
+module Theme exposing (Theme
+                    , decoder
+                    )
 
 import Dict
 import SolidColor exposing (SolidColor)
-import Xml.Decode as XD exposing (list, map, map2, path, stringAttr)
-
-{- EXAMPLE THEME
-
-<svg width="96px" height="64px" xmlns="http://www.w3.org/2000/svg" baseProfile="full" version="1.1">
-  <rect width='96' height='64'  id='background' fill='#E0B1CB'></rect>
-  <!-- Foreground -->
-  <circle cx='24' cy='24' r='8' id='f_high' fill='#231942'></circle>
-  <circle cx='40' cy='24' r='8' id='f_med' fill='#5E548E'></circle>
-  <circle cx='56' cy='24' r='8' id='f_low' fill='#BE95C4'></circle>
-  <circle cx='72' cy='24' r='8' id='f_inv' fill='#E0B1CB'></circle>
-  <!-- Background -->
-  <circle cx='24' cy='40' r='8' id='b_high' fill='#FFFFFF'></circle>
-  <circle cx='40' cy='40' r='8' id='b_med' fill='#5E548E'></circle>
-  <circle cx='56' cy='40' r='8' id='b_low' fill='#BE95C4'></circle>
-  <circle cx='72' cy='40' r='8' id='b_inv' fill='#9F86C0'></circle>
-</svg>
-
--}
+import Xml.Decode as XD exposing (fail, list, map2, path, stringAttr, succeed)
 
 
 
@@ -39,22 +23,62 @@ type alias Theme =
     }
 
 
-{-| Errors that can occur during decoding a Hundred Rabbits theme.
+
+
+
+
+
+
+
+
+
+
+
+
+{-| Errors that can occur during converting a
+Hundred Rabbits theme from BackendData to a Theme.
 -}
 type Error
-    = MalformedXML XD.Error
-    | IDNotFound String
+    = IDNotFound String
     | InvalidColor String
+
+type alias BackendData = (List (String, String))
 
 {-| Decodes a Hundred Rabbits theme SVG into a
 usable Theme type in Elm.
-
-The decoder may not succeed, so it returns a maybe.
 -}
-decoder : XD.Decoder (Result Error Theme)
+decoder : XD.Decoder Theme
 decoder =
-    map themeConstructor
-        (path ["svg"] (list shapeDecoder))
+    backendDataDecoder
+        |> XD.andThen attemptThemeConv
+
+
+{-| Attempts to convert the raw data from the XML
+decode into an actual theme.
+-}
+attemptThemeConv : BackendData -> XD.Decoder Theme
+attemptThemeConv data =
+    let
+        themeConvAttempt = makeTheme data
+    in
+        case themeConvAttempt of
+            Ok t -> succeed t
+            Err r ->
+                case r of
+                    IDNotFound id ->
+                        fail <| "The color ID '" ++ id ++ "' was not found."
+                        
+                    InvalidColor id ->
+                        fail <| "The color at ID '" ++ id ++ "' is not a valid hex color."
+
+{-| Decodes the base SVG into data that can be
+verified later in the decoding process
+-}
+backendDataDecoder : XD.Decoder BackendData
+backendDataDecoder =
+    map2 List.append 
+        (path ["rect"] (list shapeDecoder))
+        (path ["circle"] (list shapeDecoder))
 
 
 {-| Internal function that decodes a single shape.
@@ -64,6 +88,10 @@ shapeDecoder =
     map2 Tuple.pair
         (stringAttr "id")
         (stringAttr "fill")
+
+
+
+
 
 
 
@@ -99,8 +127,8 @@ withDefaultColorDict _ color = withDefaultColor color
 {-| Internal function that represents the part of the decoder that takes the raw
 data from the XML, validates it and packs it into a working theme.
 -}
-themeConstructor : List (String, String) -> Result Error Theme
-themeConstructor list =
+makeTheme : BackendData -> Result Error Theme
+makeTheme list =
     let 
         -- the list of all the IDs we need
         diffComparison = Dict.fromList
@@ -123,7 +151,7 @@ themeConstructor list =
 
         dictConv = Dict.fromList list
         
-        idCheck = Dict.diff dictConv diffComparison
+        idCheck = Dict.diff diffComparison dictConv 
 
         colorConv = list
             |> Dict.fromList
@@ -131,14 +159,14 @@ themeConstructor list =
             |> Dict.filter (\_ v -> v /= Nothing)
             |> Dict.map withDefaultColorDict
 
-        colorCheck = Dict.diff colorConv diffComparison
+        colorCheck = Dict.diff diffComparison colorConv
 
 
     in
         case hasError idCheck of
             Just e -> Err ( IDNotFound ( Tuple.first e ))
-            Nothing ->
-
+            Nothing ->  
+        
                 case hasError colorCheck of
                     Just e -> Err ( InvalidColor ( Tuple.first e ))
                     Nothing -> Ok { background = withDefaultColor <| Dict.get "background" colorConv
@@ -151,5 +179,4 @@ themeConstructor list =
                                 , bLow = withDefaultColor <| Dict.get "b_low" colorConv
                                 , bInv = withDefaultColor <| Dict.get "b_inv" colorConv
                                 }
-
 
