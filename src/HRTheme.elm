@@ -1,4 +1,4 @@
-module HRTheme exposing (HRTheme, decoder, toXmlString)
+module HRTheme exposing (HRTheme, decoder, toXmlString, toSvgImage)
 
 {-| Decode theme files and use themes that conform to the
 [Hundred Rabbits theme framework](https://github.com/hundredrabbits/Themes).
